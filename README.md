@@ -10,7 +10,10 @@ Install [doghum](https://github.com/DokterW/doghum)
 
 ### Changelog
 
-#### 2018-02-05
+#### 2018-02-06
+* Added shortening of article titles if they are longer than the width of the terminal.
+
+#### 2018-02-06
 * Fixed the counter when fetching articles. Now it should fetch all articles.
 * Also fixed (yet another) counter for when browsing depending on which feed.
 * This version should work as intended, or at least just work.

@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.3
+# DOkter's Cli FEEd ReadER v0.4
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.3"
+DFVER="0.4"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -53,7 +53,7 @@ df_fetchloop () {
         until [[ "$DFRCT" -eq "$DFART" ]]; do
             DFRCT=$(expr $DFRCT + 1)
             DFLCT=$(expr $DFLCT + 1)
-            DFTTL[$DFLCT]=$(echo "$DFFTC" | grep '<title>' | tail -n +2 | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<title>(.*)<\/title>/\1/')
+            DFTTL[$DFLCT]=$(echo "$DFFTC" | grep '<title>' | tail -n +2 | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<title>(.*)<\/title>/\1/' | cut -c 1-$DFWTH)
             DFURL[$DFLCT]=$(echo "$DFFTC" | grep '<link>' | tail -n +2 | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<link>(.*)<\/link>/\1/')
             DFHSH[$DFLCT]=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 1)
             DFRST[$DFLCT]=$(echo -e "[${DFTTL[$DFLCT]}]")
@@ -151,10 +151,12 @@ while :; do
 #        DFPST=$(df_printloop)
 #        DFCNT=1
 #    fi
+    DFWTH=$(tput cols)
+    DFWTH=$(echo "$DFWTH-4" | bc)
     clear
     echo "$DFNAM v$DFVER"
     echo ""
-    echo "$DFLST" | cut -d , -f 1 | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
+    echo "$DFLST" | cut -d , -f 1 | cut -c 1-$DFWTH | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
     echo ""
     echo "[W: up / A: back / S: down / D: select]"
     read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
