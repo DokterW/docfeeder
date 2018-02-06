@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.2
+# DOkter's Cli FEEd ReadER v0.3
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.2"
+DFVER="0.3"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -46,9 +46,9 @@ fi
 # Function --------------------------------------------------------------------------
 df_fetchloop () {
     DFCNT=0
-    until [[ "$DFCNT" -eq "$DFART" ]]; do
+    until [[ "$DFCNT" -eq "$DFLLN" ]]; do
         DFCNT=$(expr $DFCNT + 1)
-        DFFTC=$(echo "$DFLST" | sed -n "$DFCFD p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
+        DFFTC=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
         DFRCT=0
         until [[ "$DFRCT" -eq "$DFART" ]]; do
             DFRCT=$(expr $DFRCT + 1)
@@ -62,7 +62,7 @@ df_fetchloop () {
 }
 df_printloop () {
     DFRCT=0
-    until [[ "$DFRCT" -eq "$DFART" ]]; do
+    until [[ "$DFRCT" -eq "$DFLCT" ]]; do
         DFRCT=$(expr $DFRCT + 1)
         echo "${DFRST[$DFRCT]}"
     done
@@ -73,6 +73,7 @@ df_load () {
     df_fetchloop
     DFPST=$(df_printloop)
     DFCNT=1
+#    $DFCST
 }
 df_list () {
     while :; do
@@ -133,6 +134,11 @@ df_list () {
     DFLLN=$(echo "$DFLST" | wc -l)
     DFLCT=$(echo "$DFLLN * $DFART" | bc)
 }
+df_post () {
+    DFPFT=$(echo "$DFART*($DFCFD-1)+1" | bc)
+    DFPLT=$(echo "$DFPFT+$DFART-1" | bc)
+    DFCST=$DFPFT
+}
 # -----------------------------------------------------------------------------------
 # DFSWC="0"
 df_load
@@ -173,11 +179,12 @@ while :; do
         [dD])
             DFCFD=$DFCNT
             DFCNT=1
+            df_post
             while :; do
                 clear
                 echo "$DFNAM v$DFVER"
                 echo ""
-                echo "$DFPST" | sed -r "$DFCNT s/(.*)/  \1/"
+                echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
                 echo ""
                 echo "[W: up / A: back / S: down / D: select]"
                 read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
@@ -187,6 +194,10 @@ while :; do
                         if [[ "$DFCNT" -le "0" ]]; then
                             DFCNT=1
                         fi
+                        DFCST=$(expr $DFCST - 1)
+                        if [[ "$DFCST" -le "$DFPFT" ]]; then
+                            DFCST=$DFPFT
+                        fi
 #                        DFSWC="0"
                     ;;
                     [sS])
@@ -194,21 +205,27 @@ while :; do
                         if [[ "$DFCNT" -ge "$DFART" ]]; then
                             DFCNT=$DFART
                         fi
+                        DFCST=$(expr $DFCST + 1)
+                        if [[ "$DFCST" -ge "$DFPLT" ]]; then
+                            DFCST=$DFPLT
+                        fi
 #                        DFSWC="0"
                     ;;
                     [aA])
                         break
                     ;;
                     [dD])
-                        xdg-open "${DFURL[$DFCNT]}"
+                        xdg-open "${DFURL[$DFCST]}"
 #                        DFSWC="0"
                     ;;
                     [rR])
                         df_load
+                        break
                     ;;
                     [lL])
                         df_list
                         df_load
+                        break
                     ;;
                     [cC])
                         continue
