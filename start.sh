@@ -1,22 +1,16 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.4
+# DOkter's Cli FEEd ReadER v0.5
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.4"
+DFVER="0.5"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
 fi
-DFLST=$(cat $DFDIR/list.df)
-DFLLN=$(echo "$DFLST" | wc -l)
-DFART="5"
-DFLCT=$(echo "$DFLLN * $DFART" | bc)
-DFCNT=0
-DFLCT=0
 # Dependencies ----------------------------------------------------------------------
 if [ ! -e /usr/bin/lynx ] && [ ! -e /usr/bin/xmllint ]; then
     FNUOSD=$(cat /etc/system-release | grep -oE '^[A-Z][a-z]+\s' | sed '1s/\s//')
@@ -44,20 +38,35 @@ elif [ ! -e /usr/bin/xmllint ]; then
     fi
 fi
 # Function --------------------------------------------------------------------------
+df_feedlist () {
+    DFLST=$(cat $DFDIR/list.df)
+    DFLLN=$(echo "$DFLST" | wc -l)
+    DFART="5"
+    DFLCT=$(echo "$DFLLN * $DFART" | bc)
+    DFCNT=0
+    DFLCT=0
+}
 df_fetchloop () {
     DFCNT=0
     until [[ "$DFCNT" -eq "$DFLLN" ]]; do
         DFCNT=$(expr $DFCNT + 1)
         DFFTC=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
         DFRCT=0
+        DFFCK=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | grep -o 'feedburner')
+        if [[ "$DFFCK" = "feedburner" ]]; then
+            DFTAIL="3"
+        else
+            DFTAIL="2"
+        fi
         until [[ "$DFRCT" -eq "$DFART" ]]; do
             DFRCT=$(expr $DFRCT + 1)
             DFLCT=$(expr $DFLCT + 1)
-            DFTTL[$DFLCT]=$(echo "$DFFTC" | grep '<title>' | tail -n +2 | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<title>(.*)<\/title>/\1/' | cut -c 1-$DFWTH)
-            DFURL[$DFLCT]=$(echo "$DFFTC" | grep '<link>' | tail -n +2 | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<link>(.*)<\/link>/\1/')
+            DFTTL[$DFLCT]=$(echo "$DFFTC" | grep '<title>' | tail -n +$DFTAIL | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<title>(.*)<\/title>/\1/' | cut -c 1-$DFWTH)
+            DFURL[$DFLCT]=$(echo "$DFFTC" | grep '<link>' | tail -n +$DFTAIL | head -5 | sed -n "$DFRCT p" | sed -r 's/.*<link>(.*)<\/link>/\1/')
             DFHSH[$DFLCT]=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 1)
             DFRST[$DFLCT]=$(echo -e "[${DFTTL[$DFLCT]}]")
         done
+#        DFFCK=""
     done
 }
 df_printloop () {
@@ -74,6 +83,11 @@ df_load () {
     DFPST=$(df_printloop)
     DFCNT=1
 #    $DFCST
+}
+df_post () {
+    DFPFT=$(echo "$DFART*($DFCFD-1)+1" | bc)
+    DFPLT=$(echo "$DFPFT+$DFART-1" | bc)
+    DFCST=$DFPFT
 }
 df_list () {
     while :; do
@@ -101,7 +115,7 @@ df_list () {
                     case $DFKEY in
                         [dD])
                             sed -i "$DFDEL d" $DFDIR/list.df
-                            DFLST=$(cat $DFDIR/list.df)
+                            df_feedlist
                             break
                             # df_load
                         ;;
@@ -121,7 +135,7 @@ df_list () {
                 read -p "Name: " DFLNM
                 read -p " URL: " DFLUR
                 echo "$DFLNM,$DFLUR,first" >> $DFDIR/list.df
-                DFLST=$(cat $DFDIR/list.df)
+                df_feedlist
             ;;
             [bB])
                 break
@@ -131,16 +145,10 @@ df_list () {
             ;;
         esac
     done
-    DFLLN=$(echo "$DFLST" | wc -l)
-    DFLCT=$(echo "$DFLLN * $DFART" | bc)
-}
-df_post () {
-    DFPFT=$(echo "$DFART*($DFCFD-1)+1" | bc)
-    DFPLT=$(echo "$DFPFT+$DFART-1" | bc)
-    DFCST=$DFPFT
 }
 # -----------------------------------------------------------------------------------
 # DFSWC="0"
+df_feedlist
 df_load
 DFCNT=1
 while :; do

@@ -10,6 +10,10 @@ Install [doghum](https://github.com/DokterW/doghum)
 
 ### Changelog
 
+#### 2018-02-07
+* Fixed loading issue when added a new feed.
+* Added support for feedburner feeds as they like to add an extra link to the source in the xml, but feedburner link must be in the list, not the redirect.
+
 #### 2018-02-06
 * Added shortening of article titles if they are longer than the width of the terminal.
 
