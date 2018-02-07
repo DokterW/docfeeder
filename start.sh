@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.5
+# DOkter's Cli FEEd ReadER v0.6
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.5"
+DFVER="0.6"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -91,44 +91,68 @@ df_post () {
 }
 df_list () {
     while :; do
-        DFLRD=$(echo "$DFLST" | cut -d , -f 1 | nl -w1 -s'. ')
         clear
         echo "$DFNAM v$DFVER"
         echo ""
-        echo "$DFLRD"
+        echo "$DFLST" | cut -d , -f 1 | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
         echo ""
-        echo "[#: view/delete]"
-        read -p "(A)dd / (B)ack " -s -n1 DFKEY
+        echo "[W: up / A: back / S: down / D: delete]"
+        read -p "Add (f)eed " -s -n1 DFKEY
+        if [[ "$DFKEY" -eq "d" ]] || [[ "$DFKEY" -eq "D" ]]; then
+            DFDEL=$DFCNT
+        fi
         case $DFKEY in
-            [1-9])
-                DFDEL=$DFKEY
-                while :; do
-                    DFLNM=$(echo "$DFLST" | sed -rn "$DFKEY p" | cut -d , -f 1)
-                    DFLUR=$(echo "$DFLST" | sed -rn "$DFKEY p" | cut -d , -f 2)
-                    clear
-                    echo "$DFNAM v$DFVER"
-                    echo ""
-                    echo "Title: $DFLNM"
-                    echo "  URL: $DFLUR"
-                    echo ""
-                    read -p "(D)elete / (B)ack " -s -n1 DFKEY
-                    case $DFKEY in
-                        [dD])
-                            sed -i "$DFDEL d" $DFDIR/list.df
-                            df_feedlist
-                            break
-                            # df_load
-                        ;;
-                        [bB])
-                            break
-                        ;;
-                        *)
-                            continue
-                        ;;
-                    esac
-                done
+            [wW])
+                DFCNT=$(expr $DFCNT - 1)
+                if [[ "$DFCNT" -le "0" ]]; then
+                    DFCNT=1
+                fi
+            ;;
+            [sS])
+                DFCNT=$(expr $DFCNT + 1)
+                if [[ "$DFCNT" -ge "$DFLLN" ]]; then
+                    DFCNT=$DFLLN
+                fi
             ;;
             [aA])
+                break
+            ;;
+            [dD])
+                sed -i "$DFDEL d" $DFDIR/list.df
+                df_feedlist
+                DFCNT=1
+#                break
+                # df_load
+            ;;
+#            [1-9])
+#                DFDEL=$DFKEY
+#                while :; do
+#                    DFLNM=$(echo "$DFLST" | sed -rn "$DFKEY p" | cut -d , -f 1)
+#                    DFLUR=$(echo "$DFLST" | sed -rn "$DFKEY p" | cut -d , -f 2)
+#                    clear
+#                    echo "$DFNAM v$DFVER"
+#                    echo ""
+#                    echo "Title: $DFLNM"
+#                    echo "  URL: $DFLUR"
+#                    echo ""
+#                    read -p "(D)elete / (B)ack " -s -n1 DFKEY
+#                    case $DFKEY in
+#                        [dD])
+#                            sed -i "$DFDEL d" $DFDIR/list.df
+#                            df_feedlist
+#                            break
+#                            # df_load
+#                        ;;
+#                        [bB])
+#                            break
+#                        ;;
+#                        *)
+#                            continue
+#                        ;;
+#                    esac
+#                done
+#            ;;
+            [fF])
                 clear
                 echo "$DFNAM v$DFVER"
                 echo ""
@@ -136,6 +160,7 @@ df_list () {
                 read -p " URL: " DFLUR
                 echo "$DFLNM,$DFLUR,first" >> $DFDIR/list.df
                 df_feedlist
+                DFCNT=1
             ;;
             [bB])
                 break
@@ -166,7 +191,7 @@ while :; do
     echo ""
     echo "$DFLST" | cut -d , -f 1 | cut -c 1-$DFWTH | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
     echo ""
-    echo "[W: up / A: back / S: down / D: select]"
+    echo "[W: up / S: down / D: select]"
     read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
     case $DFKEY in
         [wW])
@@ -196,7 +221,7 @@ while :; do
                 echo ""
                 echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
                 echo ""
-                echo "[W: up / A: back / S: down / D: select]"
+                echo "[W: up / A: back / S: down / D: open]"
                 read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
                 case $DFKEY in
                     [wW])
