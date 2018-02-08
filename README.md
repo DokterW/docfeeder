@@ -11,6 +11,11 @@ Install [doghum](https://github.com/DokterW/doghum)
 ### Changelog
 
 #### 2018-02-07
+* Fixed a bug regarding the width if the title is longer than the terminal width.
+* Also added a backup of the most recent feed list addition. In case you delete the wrong feed or it bugs out and deletes it all.
+* You will also be asked if you really want to delete a feed from your list.
+
+#### 2018-02-07
 * Fixed loading issue when added a new feed.
 * Added support for feedburner feeds as they like to add an extra link to the source in the xml, but feedburner link must be in the list, not the redirect.
 

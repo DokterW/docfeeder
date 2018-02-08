@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.6
+# DOkter's Cli FEEd ReadER v0.7
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.6"
+DFVER="0.7"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -38,6 +38,10 @@ elif [ ! -e /usr/bin/xmllint ]; then
     fi
 fi
 # Function --------------------------------------------------------------------------
+df_width () {
+    DFWTH=$(tput cols)
+    DFWTH=$(echo "$DFWTH-4" | bc)
+}
 df_feedlist () {
     DFLST=$(cat $DFDIR/list.df)
     DFLLN=$(echo "$DFLST" | wc -l)
@@ -48,6 +52,7 @@ df_feedlist () {
 }
 df_fetchloop () {
     DFCNT=0
+    df_width
     until [[ "$DFCNT" -eq "$DFLLN" ]]; do
         DFCNT=$(expr $DFCNT + 1)
         DFFTC=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
@@ -92,8 +97,8 @@ df_post () {
 df_list () {
     while :; do
         clear
-        echo "$DFNAM v$DFVER"
-        echo ""
+#        echo "$DFNAM v$DFVER"
+#        echo ""
         echo "$DFLST" | cut -d , -f 1 | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
         echo ""
         echo "[W: up / A: back / S: down / D: delete]"
@@ -118,9 +123,26 @@ df_list () {
                 break
             ;;
             [dD])
-                sed -i "$DFDEL d" $DFDIR/list.df
-                df_feedlist
-                DFCNT=1
+                clear
+                echo "Sure you want to delete the feed?"
+                read -p "(Y)es or (N)o? " -s -n1 DFKEY
+                case $DFKEY in
+                    [yY])
+                        sed -i "$DFDEL d" $DFDIR/list.df
+                        df_feedlist
+                        DFCNT=1
+                    ;;
+                    [nN])
+                        clear
+                        echo "Maybe think about it a bit more..."
+                        sleep 2s
+                    ;;
+                    *)
+                        clear
+                        echo "Wrong key. Make yourself some coffe and think about it."
+                        sleep 2s
+                    ;;
+                esac
 #                break
                 # df_load
             ;;
@@ -154,11 +176,12 @@ df_list () {
 #            ;;
             [fF])
                 clear
-                echo "$DFNAM v$DFVER"
-                echo ""
+#                echo "$DFNAM v$DFVER"
+#                echo ""
                 read -p "Name: " DFLNM
                 read -p " URL: " DFLUR
                 echo "$DFLNM,$DFLUR,first" >> $DFDIR/list.df
+                cp $DFDIR/list.df $DFDIR/list.bk
                 df_feedlist
                 DFCNT=1
             ;;
@@ -179,16 +202,15 @@ DFCNT=1
 while :; do
 #    if [[ "$DFSWC" -eq "1" ]]; then
 #        clear
-#        echo "Loading..."
+#        echo "Loading.df_width.."
 #        df_fetchloop
 #        DFPST=$(df_printloop)
 #        DFCNT=1
 #    fi
-    DFWTH=$(tput cols)
-    DFWTH=$(echo "$DFWTH-4" | bc)
+    df_width
     clear
-    echo "$DFNAM v$DFVER"
-    echo ""
+#    echo "$DFNAM v$DFVER"
+#    echo ""
     echo "$DFLST" | cut -d , -f 1 | cut -c 1-$DFWTH | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
     echo ""
     echo "[W: up / S: down / D: select]"
@@ -217,8 +239,8 @@ while :; do
             df_post
             while :; do
                 clear
-                echo "$DFNAM v$DFVER"
-                echo ""
+#                echo "$DFNAM v$DFVER"
+#                echo ""
                 echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
                 echo ""
                 echo "[W: up / A: back / S: down / D: open]"
@@ -285,6 +307,11 @@ while :; do
         ;;
         [cC])
             continue
+        ;;
+        [vV])
+            clear
+            echo "$DFNAM v$DFVER"
+            read -s -n1
         ;;
         [qQ])
             clear
