@@ -10,6 +10,11 @@ Install [doghum](https://github.com/DokterW/doghum)
 
 ### Changelog
 
+#### 2018-02-12
+* Feed counter wasn't reset properly, so no new articles were displayed. That makes it forget the position, but will fix that later.
+* Added a title for which feed you're in. (Thank you for the idea, Cleo!)
+* Added a fix for Der Spiegel feeds (similar to FeedBurner fix).
+
 #### 2018-02-07
 * Fixed a bug regarding the width if the title is longer than the terminal width.
 * Also added a backup of the most recent feed list addition. In case you delete the wrong feed or it bugs out and deletes it all.

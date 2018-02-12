@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.7
+# DOkter's Cli FEEd ReadER v0.8
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.7"
+DFVER="0.8"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -53,11 +53,15 @@ df_feedlist () {
 df_fetchloop () {
     DFCNT=0
     df_width
+    DFLCT=0
     until [[ "$DFCNT" -eq "$DFLLN" ]]; do
         DFCNT=$(expr $DFCNT + 1)
         DFFTC=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
         DFRCT=0
         DFFCK=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | grep -o 'feedburner')
+        if [[ -z "$DFFCK" ]]; then
+            DFFCK=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | grep -o 'spiegel.de')
+        fi
         if [[ "$DFFCK" = "feedburner" ]]; then
             DFTAIL="3"
         else
@@ -241,6 +245,7 @@ while :; do
                 clear
 #                echo "$DFNAM v$DFVER"
 #                echo ""
+                echo "$DFLST" | sed -nr "$DFCFD p" | cut -d , -f 1 | sed -r 's/(.*)/[\1]/'
                 echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
                 echo ""
                 echo "[W: up / A: back / S: down / D: open]"
@@ -276,7 +281,9 @@ while :; do
 #                        DFSWC="0"
                     ;;
                     [rR])
+                        DFCFD=$DFCNT
                         df_load
+                        DFCNT=$DFCFD
                         break
                     ;;
                     [lL])
@@ -299,19 +306,41 @@ while :; do
             DFCNT=$DFCFD
         ;;
         [rR])
+            DFCFD=$DFCNT
             df_load
+            DFCNT=$DFCFD
         ;;
         [lL])
             df_list
             df_load
         ;;
         [cC])
+#            while :; do
+#                clear
+#                echo "Articles per feed: $DFART"
+#                echo ""
+#                read -p "(C)hange / (B)ack " -s -n1 DFKEY
+#                case $DFKEY in
+#                    [cC])
+#                        clear
+#                        read -p "How many articles per feed: " DFKEY
+#                        sed -i "48 s/"$DFART"/"$DFKEY"/" start.sh
+#                        df_feedlist
+#                    ;;
+#                    [bB])
+#                        break
+#                    ;;
+#                    *)
+#                        continue
+#                    ;;
+#                esac
+#            done
             continue
         ;;
         [vV])
             clear
             echo "$DFNAM v$DFVER"
-            read -s -n1
+            sleep 2s
         ;;
         [qQ])
             clear
