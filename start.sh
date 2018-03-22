@@ -1,12 +1,12 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.8
+# DOkter's Cli FEEd ReadER v0.9
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.8"
+DFVER="0.9"
 DFDIR="$HOME/.dokter/docfeeder"
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
@@ -56,6 +56,9 @@ df_fetchloop () {
     DFLCT=0
     until [[ "$DFCNT" -eq "$DFLLN" ]]; do
         DFCNT=$(expr $DFCNT + 1)
+        clear
+        echo "Loading..."
+        echo "$DFCNT/$DFLLN"
         DFFTC=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | lynx -source - | xmllint --format -)
         DFRCT=0
         DFFCK=$(echo "$DFLST" | sed -n "$DFCNT p" | cut -d , -f 2 | grep -o 'feedburner')
@@ -86,8 +89,8 @@ df_printloop () {
     done
 }
 df_load () {
-    clear
-    echo "Loading..."
+#    clear
+#    echo "Loading..."
     df_fetchloop
     DFPST=$(df_printloop)
     DFCNT=1
