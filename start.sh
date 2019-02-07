@@ -1,13 +1,14 @@
 #!/bin/bash
-# DOkter's Cli FEEd ReadER v0.9
+# DOkter's Cli FEEd ReadER v0.10
 # Made by Dr. Waldijk
 # A CLI RSS Reader.
 # Read the README.md for more info, but you will find more info here below.
 # By running this script you agree to the license terms.
 # Config ----------------------------------------------------------------------------
 DFNAM="docfeeder"
-DFVER="0.9"
+DFVER="0.10"
 DFDIR="$HOME/.dokter/docfeeder"
+DFOPT=$1
 if [[ ! -e $DFDIR/list.df ]]; then
     wget  -q -N --show-progress https://raw.githubusercontent.com/DokterW/$DFNAM/master/list.df -P $DFDIR/
 fi
@@ -202,155 +203,168 @@ df_list () {
     done
 }
 # -----------------------------------------------------------------------------------
-# DFSWC="0"
-df_feedlist
-df_load
-DFCNT=1
-while :; do
-#    if [[ "$DFSWC" -eq "1" ]]; then
-#        clear
-#        echo "Loading.df_width.."
-#        df_fetchloop
-#        DFPST=$(df_printloop)
-#        DFCNT=1
-#    fi
-    df_width
-    clear
-#    echo "$DFNAM v$DFVER"
-#    echo ""
-    echo "$DFLST" | cut -d , -f 1 | cut -c 1-$DFWTH | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
-    echo ""
-    echo "[W: up / S: down / D: select]"
-    read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
-    case $DFKEY in
-        [wW])
-            DFCNT=$(expr $DFCNT - 1)
-            if [[ "$DFCNT" -le "0" ]]; then
+if [[ "$DFOPT" != "help" ]]; then
+    # DFSWC="0"
+    df_feedlist
+    df_load
+    DFCNT=1
+    while :; do
+    #    if [[ "$DFSWC" -eq "1" ]]; then
+    #        clear
+    #        echo "Loading.df_width.."
+    #        df_fetchloop
+    #        DFPST=$(df_printloop)
+    #        DFCNT=1
+    #    fi
+        df_width
+        clear
+    #    echo "$DFNAM v$DFVER"
+    #    echo ""
+        echo "$DFLST" | cut -d , -f 1 | cut -c 1-$DFWTH | sed -r 's/(.*)/\[\1\]/g' | sed -r "$DFCNT s/(.*)/  \1/"
+        echo ""
+        echo "[W: up / S: down / D: select]"
+        read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
+        case $DFKEY in
+            [wW])
+                DFCNT=$(expr $DFCNT - 1)
+                if [[ "$DFCNT" -le "0" ]]; then
+                    DFCNT=1
+                fi
+    #            DFSWC="0"
+            ;;
+            [sS])
+                DFCNT=$(expr $DFCNT + 1)
+                if [[ "$DFCNT" -ge "$DFLLN" ]]; then
+                    DFCNT=$DFLLN
+                fi
+    #            DFSWC="0"
+            ;;
+            [aA])
+                continue
+            ;;
+            [dD])
+                DFCFD=$DFCNT
                 DFCNT=1
-            fi
-#            DFSWC="0"
-        ;;
-        [sS])
-            DFCNT=$(expr $DFCNT + 1)
-            if [[ "$DFCNT" -ge "$DFLLN" ]]; then
-                DFCNT=$DFLLN
-            fi
-#            DFSWC="0"
-        ;;
-        [aA])
-            continue
-        ;;
-        [dD])
-            DFCFD=$DFCNT
-            DFCNT=1
-            df_post
-            while :; do
+                df_post
+                while :; do
+                    clear
+    #                echo "$DFNAM v$DFVER"
+    #                echo ""
+                    echo "$DFLST" | sed -nr "$DFCFD p" | cut -d , -f 1 | sed -r 's/(.*)/[\1]/'
+                    echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
+                    echo ""
+                    echo "[W: up / A: back / S: down / D: open]"
+                    read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
+                    case $DFKEY in
+                        [wW])
+                            DFCNT=$(expr $DFCNT - 1)
+                            if [[ "$DFCNT" -le "0" ]]; then
+                                DFCNT=1
+                            fi
+                            DFCST=$(expr $DFCST - 1)
+                            if [[ "$DFCST" -le "$DFPFT" ]]; then
+                                DFCST=$DFPFT
+                            fi
+    #                        DFSWC="0"
+                        ;;
+                        [sS])
+                            DFCNT=$(expr $DFCNT + 1)
+                            if [[ "$DFCNT" -ge "$DFART" ]]; then
+                                DFCNT=$DFART
+                            fi
+                            DFCST=$(expr $DFCST + 1)
+                            if [[ "$DFCST" -ge "$DFPLT" ]]; then
+                                DFCST=$DFPLT
+                            fi
+    #                        DFSWC="0"
+                        ;;
+                        [aA])
+                            break
+                        ;;
+                        [dD])
+                            if [[ -z "$DFOPT" ]] || [[ "$DFOPT" = "gnome" ]]; then
+                                xdg-open "${DFURL[$DFCST]}"
+                            elif [[ "$DFOPT" = "lynx" ]]; then
+                                lynx "${DFURL[$DFCST]}"
+                            fi
+    #                        DFSWC="0"
+                        ;;
+                        [rR])
+                            DFCFD=$DFCNT
+                            df_load
+                            DFCNT=$DFCFD
+                            break
+                        ;;
+                        [lL])
+                            df_list
+                            df_load
+                            break
+                        ;;
+                        [cC])
+                            continue
+                        ;;
+                        [qQ])
+                            clear
+                            exit
+                        ;;
+                        *)
+                            continue
+                        ;;
+                    esac
+                done
+                DFCNT=$DFCFD
+            ;;
+            [rR])
+                DFCFD=$DFCNT
+                df_load
+                DFCNT=$DFCFD
+            ;;
+            [lL])
+                df_list
+                df_load
+            ;;
+            [cC])
+    #            while :; do
+    #                clear
+    #                echo "Articles per feed: $DFART"
+    #                echo ""
+    #                read -p "(C)hange / (B)ack " -s -n1 DFKEY
+    #                case $DFKEY in
+    #                    [cC])
+    #                        clear
+    #                        read -p "How many articles per feed: " DFKEY
+    #                        sed -i "48 s/"$DFART"/"$DFKEY"/" start.sh
+    #                        df_feedlist
+    #                    ;;
+    #                    [bB])
+    #                        break
+    #                    ;;
+    #                    *)
+    #                        continue
+    #                    ;;
+    #                esac
+    #            done
+                continue
+            ;;
+            [vV])
                 clear
-#                echo "$DFNAM v$DFVER"
-#                echo ""
-                echo "$DFLST" | sed -nr "$DFCFD p" | cut -d , -f 1 | sed -r 's/(.*)/[\1]/'
-                echo "$DFPST" | sed -nr "$DFPFT,$DFPLT p" | sed -r "$DFCNT s/(.*)/  \1/"
-                echo ""
-                echo "[W: up / A: back / S: down / D: open]"
-                read -p "(R)efresh / (L)ist / (Q)uit " -s -n1 DFKEY
-                case $DFKEY in
-                    [wW])
-                        DFCNT=$(expr $DFCNT - 1)
-                        if [[ "$DFCNT" -le "0" ]]; then
-                            DFCNT=1
-                        fi
-                        DFCST=$(expr $DFCST - 1)
-                        if [[ "$DFCST" -le "$DFPFT" ]]; then
-                            DFCST=$DFPFT
-                        fi
-#                        DFSWC="0"
-                    ;;
-                    [sS])
-                        DFCNT=$(expr $DFCNT + 1)
-                        if [[ "$DFCNT" -ge "$DFART" ]]; then
-                            DFCNT=$DFART
-                        fi
-                        DFCST=$(expr $DFCST + 1)
-                        if [[ "$DFCST" -ge "$DFPLT" ]]; then
-                            DFCST=$DFPLT
-                        fi
-#                        DFSWC="0"
-                    ;;
-                    [aA])
-                        break
-                    ;;
-                    [dD])
-                        xdg-open "${DFURL[$DFCST]}"
-#                        DFSWC="0"
-                    ;;
-                    [rR])
-                        DFCFD=$DFCNT
-                        df_load
-                        DFCNT=$DFCFD
-                        break
-                    ;;
-                    [lL])
-                        df_list
-                        df_load
-                        break
-                    ;;
-                    [cC])
-                        continue
-                    ;;
-                    [qQ])
-                        clear
-                        exit
-                    ;;
-                    *)
-                        continue
-                    ;;
-                esac
-            done
-            DFCNT=$DFCFD
-        ;;
-        [rR])
-            DFCFD=$DFCNT
-            df_load
-            DFCNT=$DFCFD
-        ;;
-        [lL])
-            df_list
-            df_load
-        ;;
-        [cC])
-#            while :; do
-#                clear
-#                echo "Articles per feed: $DFART"
-#                echo ""
-#                read -p "(C)hange / (B)ack " -s -n1 DFKEY
-#                case $DFKEY in
-#                    [cC])
-#                        clear
-#                        read -p "How many articles per feed: " DFKEY
-#                        sed -i "48 s/"$DFART"/"$DFKEY"/" start.sh
-#                        df_feedlist
-#                    ;;
-#                    [bB])
-#                        break
-#                    ;;
-#                    *)
-#                        continue
-#                    ;;
-#                esac
-#            done
-            continue
-        ;;
-        [vV])
-            clear
-            echo "$DFNAM v$DFVER"
-            sleep 2s
-        ;;
-        [qQ])
-            clear
-            exit
-        ;;
-        *)
-            continue
-        ;;
-    esac
-done
+                echo "$DFNAM v$DFVER"
+                sleep 2s
+            ;;
+            [qQ])
+                clear
+                exit
+            ;;
+            *)
+                continue
+            ;;
+        esac
+    done
+elif [[ "$DFOPT" = "help" ]]; then
+    echo "$DFNAM v$DFVER"
+    echo ""
+    echo "docfeeder <option>"
+    echo "  options:"
+    echo "          gnome (default)"
+    echo "          lynx"
+fi
